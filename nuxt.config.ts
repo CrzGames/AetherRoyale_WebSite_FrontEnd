@@ -10,6 +10,12 @@ export default defineNuxtConfig({
       noscript: [],
     },
   },
+  runtimeConfig: {
+    public: {
+      baseUrlApi: '', // sera overridé par NUXT_PUBLIC_BASE_URL_API à runtime
+      nodeEnv: '', // sera overridé par NUXT_PUBLIC_NODE_ENV à runtime
+    },
+  },
   // Directory of your source files
   srcDir: 'src-nuxt/app',
   serverDir: 'src-nuxt/server',
