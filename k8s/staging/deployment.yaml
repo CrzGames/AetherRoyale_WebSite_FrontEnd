@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: staging-aetherroyale-frontend-deployment
+  namespace: staging-aetherroyale-frontend
+  labels:
+    app: staging-aetherroyale-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: staging-aetherroyale-frontend
+  template:
+    metadata:
+      labels:
+        app: staging-aetherroyale-frontend
+    spec:
+      containers:
+        - name: staging-aetherroyale-frontend
+          image: corentin35/aetherroyale-website-frontend:staging-${TAG_VERSION}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '256Mi'
+            limits:
+              cpu: '500m'
+              memory: '512Mi'
+      imagePullSecrets:
+        - name: regcred

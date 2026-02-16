@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prod-aetherroyale-frontend-deployment
+  namespace: prod-aetherroyale-frontend
+  labels:
+    app: prod-aetherroyale-frontend
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: prod-aetherroyale-frontend
+  template:
+    metadata:
+      labels:
+        app: prod-aetherroyale-frontend
+    spec:
+      containers:
+        - name: prod-aetherroyale-frontend
+          image: corentin35/aetherroyale-website-frontend:${TAG_VERSION}
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: '1'
+              memory: '1Gi'
+            limits:
+              cpu: '2'
+              memory: '2Gi'
+      imagePullSecrets:
+        - name: regcred
