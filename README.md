@@ -8,14 +8,22 @@
 - Docker / DockerCompose (Development-Local)
 - Kubernetes (Staging and Production)
 
-<br /><br /><br /><br />
+<br /><br />
+
+---
+
+<br /><br />
 
 ## 📚 Application URL to domains of different environments - WebSite
 
 - Staging : https://staging.aetherroyale.crzgames.com
 - Production : https://aetherroyale.crzgames.com
 
-<br /><br /><br /><br /
+<br /><br />
+
+---
+
+<br /><br />
 
 ## 📦 Versionning
 
@@ -34,7 +42,11 @@ Pour créer une Pre-Release faire un commit vide, par exemple si on'ai à la ver
 git commit --allow-empty -m "chore: release 1.1.0-rc.0" -m "Release-As: 1.1.0-rc.0"
 ```
 
-<br /><br /><br /><br />>
+<br /><br />
+
+---
+
+<br /><br />
 
 ## ⚙️ Setup Environment Development
 
@@ -57,15 +69,28 @@ git commit --allow-empty -m "chore: release 1.1.0-rc.0" -m "Release-As: 1.1.0-rc
 3. Download and Install Docker (Debian) : https://docs.docker.com/engine/install/debian/
 ```
 
-<br /><br /><br /><br />
+<br /><br />
+
+---
+
+<br /><br />
 
 ## 🔄 Cycle Development
-
 ```bash
+# No docker :
+npm install
+npm run web:run:dev
 
+# With Docker
+npm install # just for idea
+docker compose up
 ```
 
-<br /><br /><br /><br />
+<br /><br />
+
+---
+
+<br /><br />
 
 ## 🚀 Production
 
@@ -76,5 +101,6 @@ git commit --allow-empty -m "chore: release 1.1.0-rc.0" -m "Release-As: 1.1.0-rc
 1. Ajoutées les SECRETS_GITHUB pour :
    - DOCKER_HUB_USERNAME
    - DOCKER_HUB_ACCESS_TOKEN
-   - KUBECONFIG
+   - KUBECONFIG_CLUSTER_STAGING_CRZGAMES_BASE64
+   - KUBECONFIG_CLUSTER_PRODUCTION_CRZGAMES_BASE64
    - PAT (crée un nouveau token si besoin sur le site de github puis dans le menu du "Profil" puis -> "Settings" -> "Developper Settings' -> 'Personnal Access Tokens' -> Tokens (classic))
