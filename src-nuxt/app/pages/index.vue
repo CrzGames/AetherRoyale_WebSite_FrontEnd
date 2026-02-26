@@ -62,76 +62,66 @@
             <thead class="bg-white/5 text-left text-xs uppercase tracking-wide text-zinc-400">
               <tr>
                 <th class="px-5 py-3">Env</th>
+                <th class="px-5 py-3">Version</th>
                 <th class="px-5 py-3">Commit</th>
                 <th class="px-5 py-3">Date</th>
-                <th class="px-5 py-3">Windows</th>
-                <th class="px-5 py-3">Linux</th>
-                <th class="px-5 py-3">macOS</th>
+
+                <!-- Colonnes dynamiques -->
+                <th v-for="p in platformColumns" :key="p" class="px-5 py-3">
+                  <div class="flex flex-col leading-tight">
+                    <span>{{ prettyPlatform(p) }}</span>
+                    <span v-if="platformSubtitle(p)" class="mt-1 text-[10px] font-medium normal-case text-zinc-500">
+                      {{ platformSubtitle(p) }}
+                    </span>
+                  </div>
+                </th>
               </tr>
             </thead>
 
             <tbody>
-              <tr v-for="r in rows" :key="r.key" class="border-t border-white/10">
+              <tr v-for="r in rows" :key="r.key" class="border-t border-white/10 align-top">
                 <td class="px-5 py-4">
                   <span class="inline-flex items-center rounded-full bg-white/10 px-2 py-1 text-xs font-semibold">
-                    {{ r.env }}
+                    {{ r.environment }}
                   </span>
                 </td>
 
                 <td class="px-5 py-4">
-                  <span class="font-mono text-xs md:text-sm">{{ r.commitSha }}</span>
+                  <span class="font-mono text-xs md:text-sm">{{ r.version ?? '—' }}</span>
+                </td>
+
+                <td class="px-5 py-4">
+                  <span class="font-mono text-xs md:text-sm">{{ r.commitSha ?? '—' }}</span>
                 </td>
 
                 <td class="px-5 py-4 text-zinc-200">
                   {{ formatDate(r.lastModifiedIso) }}
                 </td>
 
-                <!-- Windows -->
-                <td class="px-5 py-4">
-                  <button
-                    v-if="r.platforms.windows"
-                    class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15 active:bg-white/20"
-                    :title="r.platforms.windows.filename"
-                    @click="download(r.platforms.windows.downloadUrl)"
-                  >
-                    Télécharger
-                  </button>
-                  <span v-else class="text-zinc-500">—</span>
-                </td>
+                <!-- Cellules dynamiques : 1 bouton par arch si besoin -->
+                <td v-for="p in platformColumns" :key="`${r.key}:${p}`" class="px-5 py-4">
+                  <div v-if="r.platforms[p] && Object.keys(r.platforms[p]!).length" class="flex flex-wrap gap-2">
+                    <button
+                      v-for="a in Object.keys(r.platforms[p]!)"
+                      :key="`${r.key}:${p}:${a}`"
+                      class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15 active:bg-white/20"
+                      :title="r.platforms[p]![a]!.filename"
+                      @click="download(r.platforms[p]![a]!.downloadUrl)"
+                    >
+                      Télécharger <span v-if="a !== 'noarch'" class="opacity-70">({{ a }})</span>
+                    </button>
+                  </div>
 
-                <!-- Linux -->
-                <td class="px-5 py-4">
-                  <button
-                    v-if="r.platforms.linux"
-                    class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15 active:bg-white/20"
-                    :title="r.platforms.linux.filename"
-                    @click="download(r.platforms.linux.downloadUrl)"
-                  >
-                    Télécharger
-                  </button>
-                  <span v-else class="text-zinc-500">—</span>
-                </td>
-
-                <!-- macOS -->
-                <td class="px-5 py-4">
-                  <button
-                    v-if="r.platforms.macos"
-                    class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/15 active:bg-white/20"
-                    :title="r.platforms.macos.filename"
-                    @click="download(r.platforms.macos.downloadUrl)"
-                  >
-                    Télécharger
-                  </button>
                   <span v-else class="text-zinc-500">—</span>
                 </td>
               </tr>
 
               <tr v-if="!pending && rows.length === 0">
-                <td class="px-5 py-6 text-zinc-400" colspan="6">Aucun build trouvé.</td>
+                <td class="px-5 py-6 text-zinc-400" :colspan="4 + platformColumns.length">Aucun build trouvé.</td>
               </tr>
 
               <tr v-if="pending && rows.length === 0">
-                <td class="px-5 py-6 text-zinc-400" colspan="6">Chargement…</td>
+                <td class="px-5 py-6 text-zinc-400" :colspan="4 + platformColumns.length">Chargement…</td>
               </tr>
             </tbody>
           </table>
@@ -150,30 +140,38 @@
 import axios from 'axios'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
+type Environment = 'staging' | 'production' | string
+type PlatformName = string // windows | linux | macos | steamrt4 | android | ios | ...
+
 /**
- * Le backend expose une API qui liste les fichiers de builds disponibles sur S3, avec des liens de téléchargement
- * signés (expirent après 30 min). Cette page consomme cette API pour afficher les builds disponibles et permettre
- * de les télécharger.
- * @object
- * 
+ * Nouveau format backend (celui que tu montres):
+ * {
+ *   filename, downloadUrl, size, lastModified,
+ *   environment, version, commitSha, platform, arch
+ * }
  */
 type GameClientBuildFile = {
+  key: string
   filename: string
-  commitSha: string | null
+  downloadUrl: string
   size: number | null
   lastModified: string | null
-  downloadUrl: string
-}
 
-type Platform = 'windows' | 'linux' | 'macos'
-type EnvName = string
+  environment: Environment | null
+  version: string | null
+  commitSha: string | null
+  platform: PlatformName | null
+  arch: string | null
+}
 
 type Row = {
   key: string
-  env: EnvName
-  commitSha: string
+  environment: Environment
+  version: string | null
+  commitSha: string | null
   lastModifiedIso: string | null
-  platforms: Record<Platform, GameClientBuildFile | null>
+  // platforms[platform][archKey] = file
+  platforms: Record<string, Record<string, GameClientBuildFile>>
 }
 
 const config = useRuntimeConfig()
@@ -204,44 +202,75 @@ async function loadBuilds() {
 
 onMounted(loadBuilds)
 
-// aetherroyale-<platform>-<env>-<sha>.zip
-function parseFilename(filename: string): { platform: Platform | null; env: EnvName | null; sha: string | null } {
-  const m = filename.match(/^aetherroyale-(windows|linux|macos)-([a-z0-9_-]+)-([0-9a-f]{7,40})\.zip$/i)
-  if (!m) return { platform: null, env: null, sha: null }
-
-  const [, platform, env, sha] = m
-  if (!platform || !env || !sha) return { platform: null, env: null, sha: null }
-
-  return {
-    platform: platform.toLowerCase() as Platform,
-    env: env.toLowerCase(),
-    sha,
+function platformSubtitle(p: string) {
+  switch (p) {
+    case 'steamrt4':
+      return 'SteamLinux / SteamDeck'
+    case 'ios':
+      return 'AppStore / TestFlight'
+    case 'android':
+      return 'PlayStore (AAB) / APK'
+    default:
+      return null
   }
 }
 
+/**
+ * Colonnes dynamiques :
+ * - On prend les plateformes présentes dans les données
+ * - On les trie avec un ordre “humain” (desktop d’abord)
+ */
+const platformColumns = computed<string[]>(() => {
+  const set = new Set<string>()
+  for (const f of rawFiles.value) {
+    if (f.platform) set.add(f.platform)
+  }
+  const arr = Array.from(set)
+
+  const order = ['windows', 'steamrt4', 'linux', 'macos', 'android', 'ios']
+  arr.sort((a, b) => {
+    const ia = order.indexOf(a)
+    const ib = order.indexOf(b)
+    if (ia === -1 && ib === -1) return a.localeCompare(b)
+    if (ia === -1) return 1
+    if (ib === -1) return -1
+    return ia - ib
+  })
+
+  return arr
+})
 
 const rows = computed<Row[]>(() => {
   const byKey = new Map<string, Row>()
 
   for (const f of rawFiles.value) {
-    const { platform, env, sha } = parseFilename(f.filename)
-    if (!platform || !env || !sha) continue
+    const environment = f.environment ?? 'unknown'
+    const version = f.version ?? null
+    const commitSha = f.commitSha ?? null
+    const platform = f.platform ?? null
+    if (!platform) continue
 
-    const key = `${env}:${sha}`
+    // clé release: prod = env+version, staging = env+version+sha (sha dispo)
+    const key = `${environment}:${version ?? '—'}:${commitSha ?? '—'}`
     const lastModifiedIso = f.lastModified ?? null
 
     if (!byKey.has(key)) {
       byKey.set(key, {
         key,
-        env,
-        commitSha: sha,
+        environment,
+        version,
+        commitSha,
         lastModifiedIso,
-        platforms: { windows: null, linux: null, macos: null },
+        platforms: {},
       })
     }
 
     const row = byKey.get(key)!
-    row.platforms[platform] = f
+    if (!row.platforms[platform]) row.platforms[platform] = {}
+
+    // archKey: pour android/ios (ou si arch absent) -> "noarch"
+    const archKey = f.arch ?? 'noarch'
+    row.platforms[platform][archKey] = f
 
     // date la plus récente sur la ligne
     if (!row.lastModifiedIso) row.lastModifiedIso = lastModifiedIso
@@ -281,5 +310,12 @@ function formatDate(iso: string | null) {
 
 function download(url: string) {
   window.open(url, '_blank', 'noopener')
+}
+
+function prettyPlatform(p: string) {
+  // simple “labeling” (tu peux custom)
+  if (p === 'steamrt4') return 'SteamRT4'
+  if (p === 'macos') return 'macOS'
+  return p.charAt(0).toUpperCase() + p.slice(1)
 }
 </script>

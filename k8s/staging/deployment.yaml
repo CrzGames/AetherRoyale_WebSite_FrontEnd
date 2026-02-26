@@ -23,21 +23,21 @@ spec:
             - containerPort: 3000
           env:
             - name: NUXT_PUBLIC_BASE_URL_API
-              value: "https://staging.api.aetherroyale.crzgames.com"
+              value: 'https://staging.api.aetherroyale.crzgames.com'
             - name: NUXT_PUBLIC_NODE_ENV
-              value: "staging"
+              value: 'staging'
             - name: NUXT_PUBLIC_SITE_URL
-              value: "https://staging.aetherroyale.crzgames.com"
+              value: 'https://staging.aetherroyale.crzgames.com'
             - name: NUXT_SITE_ENV
-              value: "staging"
+              value: 'staging'
             - name: NUXT_SITE_NAME
-              value: "Aether Royale"
+              value: 'Aether Royale'
       resources:
         requests:
-          cpu: "20m"
-          memory: "40Mi"
+          cpu: '20m'
+          memory: '40Mi'
         limits:
-          cpu: "200m"
-          memory: "256Mi"
+          cpu: '200m'
+          memory: '256Mi'
       imagePullSecrets:
         - name: regcred
