@@ -24,7 +24,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Build and push Docker image - Production version latest
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/production/Dockerfile
@@ -32,7 +32,7 @@ jobs:
           tags: corentin35/aetherroyale-website-frontend:latest
 
       - name: Build and push Docker image - Production version x.x.x
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./docker/production/Dockerfile
